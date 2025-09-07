@@ -1,0 +1,55 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="internal">
+      <UniqueIdentifier>{db33347f-894f-49fa-94b6-0a394be86db9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="internal\compiler_config.h">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\window_types.h">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\native_status.h">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\native_ps.h">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\native_types.h">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\pe_image.h">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="internal\no_destructor.h">
+      <Filter>internal</Filter>
+    </ClInclude>
+    <ClInclude Include="process.h" />
+    <ClInclude Include="string_piece.h" />
+    <ClInclude Include="scoped_handle.h" />
+    <ClInclude Include="scoped_mem.h" />
+    <ClInclude Include="error_util.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="internal\native_ps.cc">
+      <Filter>internal</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\native_types.cc">
+      <Filter>internal</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\native_status.cc">
+      <Filter>internal</Filter>
+    </ClCompile>
+    <ClCompile Include="internal\pe_image.cc">
+      <Filter>internal</Filter>
+    </ClCompile>
+    <ClCompile Include="process.cc" />
+    <ClCompile Include="process_module.cc" />
+    <ClCompile Include="string_piece.cc" />
+    <ClCompile Include="process_inject.cc" />
+    <ClCompile Include="error_util.cc" />
+  </ItemGroup>
+</Project>
