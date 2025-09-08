@@ -45,7 +45,7 @@ Process::Process(HANDLE process_handle, bool closing_process)
 }
 
 Process::~Process() {
-  if (closing_process_) {
+  if (closing_process_ && process_ != INVALID_HANDLE_VALUE) {
     ::CloseHandle(process_);
     process_ = nullptr;
   }
