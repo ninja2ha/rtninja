@@ -1,7 +1,9 @@
-// Copyright (c) 2012 The Chromium Authors. All rights reserved.
+// Copyright (c) 2010 Ninja2ha. All rights reserved.
 // Use of this source code is governed by a LPGL3.0-style license that can be
 // found in the LICENSE file.
-// Copied from strings/stringpiece.cc with modifications
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif  // _CRT_SECURE_NO_WARNINGS
 
 #include "rtninja-core/string_piece.h"
 
@@ -455,6 +457,33 @@ WStringPiece substr(const WStringPiece& self,
                      size_t pos,
                      size_t n) {
   return substrT(self, pos, n);
+}
+
+bool ends_with(const StringPiece& lhs, 
+               const StringPiece& rhs,
+               bool case_insentive) {
+  if (rhs.length() > lhs.length())
+    return false;
+
+  size_t start_pos = lhs.length() - rhs.length();
+  size_t comp_size = rhs.length();
+  return case_insentive ?
+      !strncpy(const_cast<char*>(lhs.data() + start_pos), 
+               rhs.data(), comp_size) :
+      !_strnicmp(lhs.data() + start_pos, rhs.data(), comp_size);
+}
+
+bool ends_with(const WStringPiece& lhs, 
+               const WStringPiece& rhs,
+               bool case_insentive) {
+  if (rhs.length() > lhs.length())
+    return false;
+
+  size_t start_pos = lhs.length() - rhs.length();
+  size_t comp_size = rhs.length();
+  return case_insentive ?
+      !wcsncmp(lhs.data() + start_pos, rhs.data(), comp_size) :
+      !_wcsnicmp(lhs.data() + start_pos, rhs.data(), comp_size);
 }
 
 }  // namespace internal

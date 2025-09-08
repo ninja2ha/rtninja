@@ -108,29 +108,6 @@ bool EnumModulesByMemoryRegion(const Process* process,
 }
 
 // --
-template <class Ptr>
-bool ReadProcessUnicodeString(HANDLE process,
-                              const nt::UNICODE_STRING_T<Ptr>* ptr,
-                              std::wstring* out) {
-  if (out)
-    out->clear();
-
-  SIZE_T chr_size = ptr->Length / sizeof(wchar_t);
-  if (chr_size == 0 || ptr->MaximumLength == 0)
-    return true;
-
-  std::wstring ustr;
-  ustr.reserve(chr_size + 1);
-  ustr.resize(chr_size);
-  if (!nt::ReadProcessMemory64(process, ptr->Buffer, &ustr[0], ptr->Length))
-    return false;
-
-  if (out)
-    out->swap(ustr);
-  return true;
-}
-
-// --
 template <class Headers>
 bool EnumerateModuleProcedures(
     HANDLE process,
@@ -181,19 +158,6 @@ bool EnumerateModuleProcedures(
   return true;
 }
 
-// --
-bool EndsWith(WStringPiece input, WStringPiece comp, bool case_insentive) {
-  if (comp.length() > input.length())
-    return false;
-
-  size_t start_pos = input.length() - comp.length();
-  size_t comp_size = comp.length();
-  return case_insentive ?
-      !wcsncmp(input.data() + start_pos, comp.data(), comp_size) :
-      !_wcsnicmp(input.data() + start_pos, comp.data(), comp_size);
-}
-
-
 }  // namespace 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -215,7 +179,7 @@ bool Process::EnumerateModules(bool(*callback)(ModuleEntry*, void*),
     continue_enum = EnumPEBLdrData<ULONG64>(process_, &peb64,
         [this, &count64, callback, cookie] (nt::LDR_DATA_TABLE_ENTRY64* entry) {
           std::wstring full_path;
-          ReadProcessUnicodeString(process_, &entry->FullDllName, &full_path);
+          this->ReadUnicodeString64(&entry->FullDllName, &full_path);
 
           ModuleEntry info;
           info.base = entry->DllBase;
@@ -241,7 +205,7 @@ bool Process::EnumerateModules(bool(*callback)(ModuleEntry*, void*),
             return true;
 
           std::wstring full_path;
-          ReadProcessUnicodeString(process_, &entry->FullDllName, &full_path);
+          this->ReadUnicodeString32(&entry->FullDllName, &full_path);
 
           ModuleEntry info;
           info.base = entry->DllBase;
@@ -261,7 +225,7 @@ bool Process::GetModuleInfo(WStringPiece module_file,
   ZeroMemory(info, sizeof(*info));
 
   struct Cookie {
-    WStringPiece module_file; // once copy!!
+    WStringPiece module_file;
     Architecture proc_arch;
     bool search_x64_first;
     ModuleEntry* info;
@@ -269,10 +233,11 @@ bool Process::GetModuleInfo(WStringPiece module_file,
 
   EnumerateModules([](ModuleEntry* entry, void* cookie) { 
     Cookie* ck = reinterpret_cast<Cookie*>(cookie);
-    if (!EndsWith(entry->full_path, ck->module_file, false))
+    if (!entry->full_path.ends_with(ck->module_file, false))
       return true;
 
-    // want seach x64 module first
+    // should gets x64 module at first? 
+    // saving x86-module entry and searching next.
     if (ck->proc_arch == kArchX86 && ck->search_x64_first && !entry->arch_x64) {
       *(ck->info) = *entry;
       ck->info->full_path_data = entry->full_path.as_string();
@@ -325,7 +290,7 @@ bool Process::GetModuleInfo2(WStringPiece module_file,
   ZeroMemory(info, sizeof(*info));
 
   struct Cookie {
-    WStringPiece module_file; // once copy!!
+    WStringPiece module_file;
     Architecture proc_arch;
     bool search_x64_first;
     ModuleEntry* info;
@@ -333,11 +298,11 @@ bool Process::GetModuleInfo2(WStringPiece module_file,
 
   EnumerateModules2([](ModuleEntry* entry, void* cookie) { 
     Cookie* ck = reinterpret_cast<Cookie*>(cookie);
-    if (!EndsWith(entry->full_path, ck->module_file, false))
+    if (!entry->full_path.ends_with(ck->module_file, false))
       return true;
 
-    // wanna gets x64 module at first? 
-    // to save x86 module entry and searching next.
+    // should gets x64 module at first? 
+    // saving x86-module entry and searching next.
     if (ck->proc_arch == kArchX86 && ck->search_x64_first && !entry->arch_x64) {
       *(ck->info) = *entry;
       ck->info->full_path_data = entry->full_path.as_string();
@@ -405,8 +370,8 @@ bool Process::EnumerateModuleProcs(ULONG64 module,
 }
 
 // --
-bool Process::GetModuleProcs(
-    ULONG64 module, ProcEntry* proc_entry, ULONG count)  const {
+bool Process::GetModuleProcs(ULONG64 module, ProcEntry* proc_entry, ULONG count)
+    const {
   struct Cookie {
     ProcEntry* proc_entry;
     ULONG count;

@@ -5,9 +5,9 @@
 #ifndef RTNINJA_RTNINJA_CORE_SCOPED_HANDLE_H_
 #define RTNINJA_RTNINJA_CORE_SCOPED_HANDLE_H_
 
-#include <windows.h>
-
 #include <memory>
+
+#include "rtninja-core/internal/window_types.h"
 
 namespace rtninja {
 

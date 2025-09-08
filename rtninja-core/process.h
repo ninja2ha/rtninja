@@ -12,6 +12,7 @@
 
 #include "rtninja-core/string_piece.h"
 #include "rtninja-core/error_util.h"
+#include "rtninja-core/internal/native_types.h"
 #include "rtninja-core/internal/compiler_config.h"
 
 namespace rtninja {
@@ -75,7 +76,7 @@ class Process {
   // Returns false on user aborted.
   // NOTE: Calling GetLastError to get more details.
   // WARN: Invoking this method after CreateProcess will get a empty result. 
-  //       using EnumerateModules2 to instead.
+  //       using EnumerateModules2 to instead of.
   // REQUIRED ACCESS: 
   // - PROCESS_VM_READ | PROCESS_QUERY_INFORMATION
   bool EnumerateModules(bool(* callback)(ModuleEntry*, void*),
@@ -86,7 +87,7 @@ class Process {
   // from a wow64-process.
   // NOTE: Calling GetLastError() to get more detail...
   // WARN: Invoking this method after CreateProcess will get a empty result. 
-  //       using GetModuleInfo2 to instead.
+  //       using GetModuleInfo2 to instead of.
   // REQUIRED ACCESS: 
   // - PROCESS_VM_READ | PROCESS_QUERY_INFORMATION
   bool GetModuleInfo(WStringPiece module_file,
@@ -95,7 +96,7 @@ class Process {
 
   // Enumerates modules by querying virtual memoryt information. 
   // Returns false on user aborted.
-  // NOTE: Calling GetLastError to get more details.
+  // NOTE: Calling ::GetLastError() to get more details.
   // REQUIRED ACCESS: 
   // - PROCESS_VM_READ | PROCESS_QUERY_INFORMATION
   bool EnumerateModules2(bool(* callback)(ModuleEntry*, void*),
@@ -106,10 +107,10 @@ class Process {
                       bool search_x64_first,
                       ModuleEntry* info) const;
 
-  // Returns false on user aborted or means |module| is valid while |callback| 
-  // is set as nullptr and NtHeaders.FileHeader.Machine will be write into 
-  // |cookie|.
-  // NOTE: Calling GetLastError to get more details.
+  // Returns false on user aborted or means the |module| is valid if
+  // |callback| is passed a nullptr and NtHeaders.FileHeader.Machine will be
+  // wrote into |cookie|.
+  // NOTE: Calling ::GetLastError() to get more details.
   // REQUIRED ACCESS: 
   // - PROCESS_VM_READ | PROCESS_QUERY_INFORMATION
   bool EnumerateModuleProcs(ULONG64 module,
@@ -121,19 +122,20 @@ class Process {
     ULONG64 address;  // out
   };
   // Returns true on found all of procedures.
-  // NOTE: Calling GetLastError to get more details.
+  // NOTE: Calling ::GetLastError() to get more details.
   // REQUIRED ACCESS: 
   // - PROCESS_VM_READ | PROCESS_QUERY_INFORMATION
   bool GetModuleProcs(ULONG64 module, ProcEntry* proc_info, ULONG proc_count) 
       const;
 
-  // -- injector start ---------------------------------------------------------
+  // -- injector  --------------------------------------------------------------
+
   enum InjectError {
     kInjectOk = 0,        // injects successed.
-    kInjectInvalidProcess,// the target is invalid.
+    kInjectInvalidProcess,// the target process is invalid.
     kInjectDllPath,       // the length of dllpath is too long. required < 260.
     kInjectProcName,      // the length of proc is too long. required < 64
-    kInjectProcParam,     // the length of procparam is too long. required < 260
+    kInjectProcParam,    // the length of procparam is too long. required < 260
     kInjectQueryModule,   // failed to invoke GetModuleInfo | GetModuleInfo2
                           // calling ::GetLastError() to get more details.
     kInjectQueryModuleProc, // failed to invoke EnumerateModuleProcs
@@ -162,7 +164,17 @@ class Process {
       const WStringPiece& proc_param = WStringPiece()) const;
 
  private:
-  // Initializes the architecture of process.
+  // -- Mem op(private) --------------------------------------------------------
+
+  // Reads 'Buffer' of UnicodeString from target process.
+  // Return true on success and values are wrote into |out|.
+  // Retrun false on error or invoking ::GetLastError() to get more details.
+  bool ReadUnicodeString32(const nt::UNICODE_STRING32* ustr, std::wstring* out)
+      const;
+  bool ReadUnicodeString64(const nt::UNICODE_STRING64* ustr, std::wstring* out)
+      const;
+
+  // Initializes architecture of process.
   void InitializeProcessArch();
 
   HANDLE process_;

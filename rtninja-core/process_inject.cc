@@ -99,6 +99,7 @@ NTSTATUS NTAPI LdrLoadDllImpl(__in ShellParam* p,
   return s;
 }
 
+// shellcode of LdrLoadDllImpl
 static const ULONG32 LdrLoadDllShell32[] = { 
   0x83EC8B55, 0x57560CEC, 0x8D087D8B, 0x6A500845, 0xF8458D40, 0x20FC45C7,
   0x8B000000, 0x8D500C77, 0x7589F445, 0x478B50F4, 0xC7FF6A14, 0x0020F845,
@@ -113,7 +114,8 @@ static const ULONG32 LdrLoadDllShell32[] = {
   0xCC0010C2
 };
 
-static const ULONG64 LdrLoadDllShell64[] { 
+// shellcode of LdrLoadDllImpl
+static const ULONG64 LdrLoadDllShell64[] {
   0x49105B8949DC8B4C, 0x4856415756186B89, 0x4918598B4860EC83, 0xC749F98B4808438D,
   0x8B4900000020B843, 0xE88B49C85B8949F1, 0x00000020C043C749, 0x000843C741F28B4C,
   0x000040B941000000, 0x438D4DA843894900, 0x538D49FFC98348C0, 0x244C8B4C2857FFC8,
@@ -170,12 +172,12 @@ Process::InjectError InjectLibray32(const Process* process,
 
   BYTE* next_ptr = codes.get();
 
-  // write param;
+  // Writes shellcode param;
   constexpr size_t func_offset = ((sizeof(*param) + 0x10) & 0xFFFFFFF0);
   memcpy(next_ptr, param, sizeof(*param));
   next_ptr += func_offset;
 
-  // make top shell code :
+  // Makes top shell code :
   // - ;thunk_code_up
   // - nop
   // - nop
@@ -224,12 +226,12 @@ Process::InjectError InjectLibray64(const Process* process,
 
   BYTE* next_ptr = codes.get();
 
-  // write param;
+  // Writes param;
   constexpr size_t func_offset = ((sizeof(*param) + 0x10) & 0xFFFFFFF0);
   memcpy(next_ptr, param, sizeof(*param));
   next_ptr += func_offset;
 
-  // make top shell code :
+  // Makes top shell code :
   // - ;thunk_code_up
   // - mov rax, shell_param
   // - mov [rax], rcx
@@ -248,12 +250,12 @@ Process::InjectError InjectLibray64(const Process* process,
   memcpy(next_ptr, LdrLoadDllShell64, sizeof(LdrLoadDllShell64));
   next_ptr += sizeof(LdrLoadDllShell64);
 
-  // writes shellcode
+  // Writes shellcode
   SIZE_T code_size = next_ptr - codes.get();
   if (!process->WriteMem64(param->ShellAddr, codes.get(), code_size))
     return Process::kInjectWriteShell;
 
-  // writes hook
+  // Writes hook code
   ScopedMemAccess64 access(process->handle(), param->LdrLoadDll, 16);
 
   *(ULONG64*)(thunk_code_up + 1) = param->ShellAddr + func_offset;
@@ -316,16 +318,17 @@ rtninja::Process::InjectError Process::InjectLibraryAfterCreateProcess(
     { reinterpret_cast<const char*>(ldr_load_dll), 0 }, // 0
     { reinterpret_cast<const char*>(get_proc), 0 },     // 1
     { reinterpret_cast<const char*>(write_mem), 0 },    // 2
-    { reinterpret_cast<const char*>(set_event), 0 },  // 3
+    { reinterpret_cast<const char*>(set_event), 0 },    // 3
     { reinterpret_cast<const char*>(nt_close), 0 },     // 4
     { reinterpret_cast<const char*>(free_mem), 0 },     // 5
     { reinterpret_cast<const char*>(protect_mem), 0 },  // 6
   };
 
+  // TODO: Gets procedures bypass iat(IMPORT ADDRESS TABLE) hooking.
   if (!GetModuleProcs(me.base, proc_entry, ARRAYSIZE(proc_entry)))
     return kInjectQueryModuleProc;
 
-  // clone sync_event to injected process to reset event.
+  // Clones sync_event to injected process to set event.
   HANDLE targt_sync_event = nullptr;
   if (sync_event) {
     ::DuplicateHandle(
@@ -354,23 +357,24 @@ rtninja::Process::InjectError Process::InjectLibraryAfterCreateProcess(
     shell_param.ShellAddr = HandleToUlong32(allocate_mem.get());
     shell_param.ShellAddrSize = allocate_size;
 
-    // fills injected dll file path.
+    // Fills injected dll file path.
     wcsncpy_s(shell_param.InjectDllBuf, dll32.data(), dll32.size());
     buffer_size = static_cast<WORD>(dll32.size() * sizeof(wchar_t));
     shell_param.InjectDll.Length = buffer_size;
     shell_param.InjectDll.MaximumLength = buffer_size + sizeof(wchar_t);
 
-    // fills main entry
+    // Fills main entry
     strncpy_s(shell_param.ProcedureBuf, proc.data(), proc.size());
     buffer_size = static_cast<WORD>(proc.size() * sizeof(char));
     shell_param.Procedure.Length = buffer_size;
     shell_param.Procedure.MaximumLength = buffer_size + sizeof(char);
 
-    // fills config
+    // Fills config
     wcsncpy_s(shell_param.ConfigFile, proc_param.data(), proc_param.size());
 
     InjectError code = InjectLibray32(this, &shell_param);
     if (code == kInjectOk) {
+      // Shellcode may be not run. so let the shellcode release it.
       allocate_mem.release();
     }
     return code;
@@ -390,23 +394,24 @@ rtninja::Process::InjectError Process::InjectLibraryAfterCreateProcess(
   shell_param.ShellAddr = HandleToUlong64(allocate_mem.get());
   shell_param.ShellAddrSize = allocate_size;
 
-  // fills injected dll file path.
+  // Fills injected dll file path.
   wcsncpy_s(shell_param.InjectDllBuf, dll64.data(), dll64.size());
   buffer_size = static_cast<WORD>(dll64.size() * sizeof(wchar_t));
   shell_param.InjectDll.Length = buffer_size;
   shell_param.InjectDll.MaximumLength = buffer_size + sizeof(wchar_t);
 
-  // fills main entry
+  // Fills main entry
   strncpy_s(shell_param.ProcedureBuf, proc.data(), proc.size());
   buffer_size = static_cast<WORD>(proc.size() * sizeof(char));
   shell_param.Procedure.Length = buffer_size;
   shell_param.Procedure.MaximumLength = buffer_size + sizeof(char);
 
-  // fills config
+  // Fills config
   wcsncpy_s(shell_param.ConfigFile, proc_param.data(), proc_param.size());
 
   InjectError code = InjectLibray64(this, &shell_param);
   if (code == kInjectOk) {
+    // Shellcode may be not run. so let the shellcode release it.
     allocate_mem.release();
   }
   return code;

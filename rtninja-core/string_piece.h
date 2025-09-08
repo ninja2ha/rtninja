@@ -1,23 +1,6 @@
-// Copyright (c) 2012 The Chromium Authors. All rights reserved.
+// Copyright (c) 2010 Ninja2ha. All rights reserved.
 // Use of this source code is governed by a LPGL3.0-style license that can be
 // found in the LICENSE file.
-// Copied from strings/stringpiece.h with modifications
-//
-// A string-like object that points to a sized piece of memory.
-//
-// You can use StringPiece as a function or method parameter.  A StringPiece
-// parameter can receive a double-quoted string literal argument, a "const
-// char*" argument, a string argument, or a StringPiece argument with no data
-// copying.  Systematic use of StringPiece for arguments reduces data
-// copies and strlen() calls.
-//
-// Prefer passing StringPieces by value:
-//   void MyFunction(StringPiece arg);
-// If circumstances require, you may also pass by const reference:
-//   void MyFunction(const StringPiece& arg);  // not preferred
-// Both of these have the same lifetime semantics.  Passing by value
-// generates slightly smaller code.  For more discussion, Googlers can see
-// the thread go/stringpiecebyvalue on c-users.
 
 #ifndef RTNINJA_RTNINJA_CORE_STRING_PIECE_H_
 #define RTNINJA_RTNINJA_CORE_STRING_PIECE_H_
@@ -137,6 +120,13 @@ StringPiece substr(const StringPiece& self,
 WStringPiece substr(const WStringPiece& self,
                      size_t pos,
                      size_t n);
+
+bool ends_with(const StringPiece& lhs, 
+               const StringPiece& rhs,
+               bool case_insentive);
+bool ends_with(const WStringPiece& lhs,
+               const WStringPiece& rhs,
+               bool case_insentive);
 
 }  // namespace internal
 
@@ -336,6 +326,12 @@ template <typename STRING_TYPE> class BasicStringPiece {
   BasicStringPiece substr(size_type pos,
                           size_type n = BasicStringPiece::npos) const {
     return internal::substr(*this, pos, n);
+  }
+
+  // ends with
+  bool ends_with(const BasicStringPiece<STRING_TYPE>& ends_value,
+                 bool case_insentive = true) const {
+    return internal::ends_with(*this, ends_value, case_insentive);
   }
 
  protected:

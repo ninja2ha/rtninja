@@ -10,9 +10,37 @@
 
 namespace rtninja {
 
+namespace {
+
+template <class Ptr>
+bool ReadProcessUnicodeStringT(HANDLE process,
+                               const nt::UNICODE_STRING_T<Ptr>* ptr,
+                               std::wstring* out) {
+  if (out)
+    out->clear();
+
+  SIZE_T chr_size = ptr->Length / sizeof(wchar_t);
+  if (chr_size == 0 || ptr->MaximumLength == 0)
+    return true;
+
+  std::wstring ustr;
+  ustr.reserve(chr_size + 1);
+  ustr.resize(chr_size);
+  if (!nt::ReadProcessMemory64(process, ptr->Buffer, &ustr[0], ptr->Length))
+    return false;
+
+  if (out)
+    out->swap(ustr);
+  return true;
+}
+
+}  // namesapce
+
+////////////////////////////////////////////////////////////////////////////////
+
 Process::Process(HANDLE process_handle, bool closing_process)
     : process_(process_handle),
-      closing_process_(closing_process) {
+      closing_process_(closing_process && process_ != nt::CurrentProcess()) {
   InitializeProcessArch();
 }
 
@@ -43,18 +71,6 @@ void Process::InitializeProcessArch() {
 #elif defined(RTNINJA_ARCH_CPU_X86_64)
   process_arch_ = is_wow64 ? kArchX86 : kArchX64;
 #endif
-}
-
-SIZE_T Process::ReadMem64(ULONGLONG address, PVOID buffer, SIZE_T read_size) 
-    const {
-  nt::ReadProcessMemory64(process_, address, buffer, read_size, &read_size);
-  return read_size;
-}
-
-SIZE_T Process::WriteMem64(ULONGLONG address, PVOID buffer, SIZE_T write_size) 
-    const {
-  nt::WriteProcessMemory64(process_, address, buffer, write_size, &write_size);
-  return write_size;
 }
 
 int Process::GetPEB(ULONG32* peb32, ULONG64* peb64) const {
@@ -98,4 +114,28 @@ int Process::GetPEB(ULONG32* peb32, ULONG64* peb64) const {
 #endif
 }
 
-}  // namespace ninja_core
+// -- MEM OPS ------------------------------------------------------------------
+
+SIZE_T Process::ReadMem64(ULONGLONG address, PVOID buffer, SIZE_T read_size) 
+    const {
+  nt::ReadProcessMemory64(process_, address, buffer, read_size, &read_size);
+  return read_size;
+}
+
+SIZE_T Process::WriteMem64(ULONGLONG address, PVOID buffer, SIZE_T write_size) 
+    const {
+  nt::WriteProcessMemory64(process_, address, buffer, write_size, &write_size);
+  return write_size;
+}
+
+bool Process::ReadUnicodeString32(const nt::UNICODE_STRING32* ustr, 
+                                  std::wstring* out) const {
+  return ReadProcessUnicodeStringT(process_, ustr, out);
+}
+
+bool Process::ReadUnicodeString64(const nt::UNICODE_STRING64* ustr, 
+                                  std::wstring* out) const {
+  return ReadProcessUnicodeStringT(process_, ustr, out);
+}
+
+}  // namespace rtninja
