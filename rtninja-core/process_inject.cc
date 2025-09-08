@@ -133,7 +133,7 @@ static const ULONG64 LdrLoadDllShell64[] {
 
 template <class Ptr>
 struct alignas(sizeof(Ptr)) ShellParamT {
-// don not the order of change field .
+  // same with ShellParam, don not change order of members.
   Ptr DllPath; // LdrLoadDll first param
   Ptr ShellAddr;  // ecx + 4] (x86), ecx + 8](x64)
   Ptr ShellAddrSize; // ecx + 8] (x86, ecx + 10](x64)
