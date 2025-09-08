@@ -152,7 +152,7 @@ class Process {
   // Returns InjectError code.
   // NOTE:
   // |sync_event|: this is a event handle to sign after 'RtNinjaMain' invoked.
-  // |proc|: this is the name of exports function which was writed as 
+  // |proc|: this is the name of exports function which was wrote as 
   //        'void RtNinjaMain(const wchar_* proc_param) {} '
   // REQUIRED ACCESS: 
   // - PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION
