@@ -142,11 +142,11 @@ class Process {
                             // calling ::GetLastError() to get more details.
     kInjectAllocShell,    // failed to allocate shell memory. 
                           // calling ::GetLastError() to get more details.
-    kInjectWriteShell,    // failed to write shell memory
+    kInjectWriteShell,    // failed to write shell memory into target process.
                           // calling ::GetLastError() to get more details.
-    kInjectReadHook,      // failed to read hook code to target process.
+    kInjectReadHook,      // failed to read hook code from target process.
                           // calling ::GetLastError() to get more details.
-    kInjectWriteHook,     // failed to write hook code to target process.
+    kInjectWriteHook,     // failed to write hook code into target process.
                           // calling ::GetLastError() to get more details.
   };
   // Returns InjectError code.
