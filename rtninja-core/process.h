@@ -144,20 +144,43 @@ class Process {
                           // calling ::GetLastError() to get more details.
     kInjectWriteShell,    // failed to write shell memory into target process.
                           // calling ::GetLastError() to get more details.
+
+    /* InjectLibraryByHookingLdrLoadDll specified */
     kInjectReadHook,      // failed to read hook code from target process.
                           // calling ::GetLastError() to get more details.
     kInjectWriteHook,     // failed to write hook code into target process.
                           // calling ::GetLastError() to get more details.
+
+    /* InjectLibraryByThreading specified */
+    kInjectCreateThread, // failed to create remote thread.
+                         // calling ::GetLastError() to get more details.
   };
-  // Returns InjectError code.
+
+  // Returns InjectError code. implemented on process_inject.cc
   // NOTE:
-  // |sync_event|: this is a event handle to sign after 'RtNinjaMain' invoked.
-  // |proc|: this is the name of exports function which was wrote as 
+  // |sync_event|: a event handle to sign after the shellcode has run over.
+  // |proc|: this is the name of exports function which like 
   //        'void RtNinjaMain(const wchar_* proc_param) {} '
   // REQUIRED ACCESS: 
   // - PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION
-  InjectError InjectLibraryAfterCreateProcess(
-      HANDLE sync_event,
+  InjectError InjectLibraryByHookingLdrLoadDll(
+      HANDLE sign_event,
+      const WStringPiece& dll32,
+      const WStringPiece& dll64,
+      const StringPiece& proc = StringPiece(),
+      const WStringPiece& proc_param = WStringPiece()) const;
+
+  // Returns InjectError code. implemented on process_inject2.cc, this method
+  // could be blocked. cause of returns after the shellcode has run over.
+  // NOTE:
+  // |sync_event|: a event handle to sign after the shellcode has run over.
+  // |proc|: this is the name of exports function which like 
+  //        'void RtNinjaMain(const wchar_* proc_param) {} '
+  // REQUIRED ACCESS: 
+  // - PROCESS_VM_READ | PROCESS_VM_WRITE | PROCESS_QUERY_INFORMATION |
+  //   PROCESS_CREATE_THREAD
+  InjectError InjectLibraryByThreading(
+      HANDLE sign_event,
       const WStringPiece& dll32,
       const WStringPiece& dll64,
       const StringPiece& proc = StringPiece(),

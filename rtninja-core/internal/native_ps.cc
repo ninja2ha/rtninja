@@ -90,6 +90,19 @@ RTNINJA_NT_API(
     NtFreeVirtualMemory, 
     0x7246744E, 0x69566565, 0x61757472, 0x6D654D6C,
     0x0079726F)
+    
+// GetRtlCreateUserThread
+RTNINJA_NT_API(
+    RtlCreateUserThread, 
+    0x436C7452, 0x74616572, 0x65735565, 0x72685472,
+    0x00646165)
+
+// GetRtlCreateUserThread64
+RTNINJA_NT_API64(
+    RtlCreateUserThread, 
+    0x436C7452, 0x74616572, 0x65735565, 0x72685472,
+    0x00646165)
+
 
 #define MAX_ADDRESS_32 (0x7FFFFFFF)
 #define SAFE_SET(ptr, val) do{ if (ptr){*ptr = val;}} while(0)
@@ -438,7 +451,7 @@ BOOL FreeProcessMemory(HANDLE ProcessHandle,
 
 HANDLE CurrentProcess() {
 #if defined(RTNINJA_ARCH_CPU_X86)
-  static const NoDestructor<HANDLE> self_handle([]{
+  static const NoDestructor<HANDLE> self_handle([]() -> HANDLE {
     HANDLE handle = NULL;
     ::DuplicateHandle(INVALID_HANDLE_VALUE, INVALID_HANDLE_VALUE, 
                       INVALID_HANDLE_VALUE, &handle, 
@@ -450,6 +463,90 @@ HANDLE CurrentProcess() {
   return *self_handle;
 #elif defined(RTNINJA_ARCH_CPU_X86_64)
   return INVALID_HANDLE_VALUE;
+#endif
+}
+
+HANDLE CreateThread(HANDLE hProcess,
+                    SIZE_T dwStackSize,
+                    ULONG_PTR lpStartAddress,
+                    ULONG_PTR lpParameter,
+                    DWORD dwCreationFlags,
+                    LPDWORD lpThreadId) {
+  SAFE_SET(lpThreadId, 0);
+
+  ScopedNtStatus status;
+  
+  auto func = GetRtlCreateUserThread();
+  if (func == nullptr) {
+    status = kStatusNotImplemented;
+    return nullptr;
+  }
+
+  HANDLE thread_handle = nullptr;
+  CLIENT_ID client_id;
+  status = func(
+      hProcess, 
+      nullptr, 
+      !!(dwCreationFlags & CREATE_SUSPENDED), 
+      0, 
+      dwStackSize, 
+      dwStackSize,
+      reinterpret_cast<LPTHREAD_START_ROUTINE>(lpStartAddress),
+      reinterpret_cast<LPVOID>(lpParameter),
+      &thread_handle,
+      &client_id);
+  if (NT_SUCCESS(status)) {
+    SAFE_SET(lpThreadId, static_cast<DWORD>(client_id.UniqueThread));
+    return thread_handle;
+  }
+
+  return nullptr;
+}
+
+HANDLE CreateThread64(HANDLE hProcess,
+                      SIZE_T dwStackSize,
+                      ULONGLONG lpStartAddress,
+                      ULONGLONG lpParameter,
+                      DWORD dwCreationFlags,
+                      LPDWORD lpThreadId) {
+#if defined(RTNINJA_ARCH_CPU_X86)
+  SAFE_SET(lpThreadId, 0);
+
+  ScopedNtStatus status;
+
+  auto func64 = GetRtlCreateUserThread64();
+  auto x64call = GetX64Call();
+  if (func64 == 0ull || x64call == nullptr) {
+    status = kStatusNotImplemented;
+    return nullptr;
+  }
+
+  ULONGLONG thread_handle = 0ull;
+  CLIENT_ID64 client_id;
+
+  status = static_cast<NTSTATUS>(x64call(
+      func64, 
+      10,
+      HandleToUlong64(hProcess), // ProcessHandle
+      0ull,                      // ThreadSecurityDescriptor
+      static_cast<ULONG64>(!!(dwCreationFlags & CREATE_SUSPENDED)),
+      0ull,
+      static_cast<ULONG64>(dwStackSize),
+      static_cast<ULONG64>(dwStackSize),
+      lpStartAddress,
+      lpParameter,
+      HandleToUlong64(&thread_handle),
+      HandleToHandle64(&client_id)));
+  if (NT_SUCCESS(status)) {
+    SAFE_SET(lpThreadId, static_cast<DWORD>(client_id.UniqueThread));
+    return Ulong64ToHandle(thread_handle);
+  }
+
+  return nullptr;
+#elif defined(RTNINJA_ARCH_CPU_X86_64)
+  return CreateThread(
+      hProcess, dwStackSize, lpStartAddress, lpParameter, dwCreationFlags,
+      lpThreadId);
 #endif
 }
 

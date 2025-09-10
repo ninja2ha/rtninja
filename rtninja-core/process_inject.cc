@@ -30,7 +30,7 @@ struct alignas(sizeof(void*)) ShellParam {
   nt::NtCloseFunc NtClose;
 
   // Dulipcate handle
-  HANDLE SyncEvent;
+  HANDLE SignEvent;
 
   // Restore
   BYTE OrignalCode[32];
@@ -88,51 +88,52 @@ NTSTATUS NTAPI LdrLoadDllImpl(__in ShellParam* p,
     }
   }
 
-  p->NtSetEvent(p->SyncEvent);
-  p->NtClose(p->SyncEvent);
-
   if (!NT_SUCCESS(s)) {
-    // restores hook failed... make a crash.
+    // Restores hook failed, make a crash.
     __debugbreak();
   }
+
+  p->NtSetEvent(p->SignEvent);
+  p->NtClose(p->SignEvent);
 
   return s;
 }
 
 // shellcode of LdrLoadDllImpl
 static const ULONG32 LdrLoadDllShell32[] = { 
-  0x83EC8B55, 0x57560CEC, 0x8D087D8B, 0x6A500845, 0xF8458D40, 0x20FC45C7,
-  0x8B000000, 0x8D500C77, 0x7589F445, 0x478B50F4, 0xC7FF6A14, 0x0020F845,
-  0x45C70000, 0x00000008, 0x8DD0FF00, 0xFF50FC45, 0x478DFC75, 0x478B5028,
-  0xFF6A5618, 0xF08BD0FF, 0x5008458D, 0x8D0875FF, 0x8D50F845, 0x8B50F445,
-  0xFF6A1447, 0xF685D0FF, 0x75FF6A78, 0x0C478B14, 0xFF1075FF, 0x37FF0C75,
+  0x83EC8B55, 0x57560CEC, 0x8D087D8B, 0x6A500845, 0xF8458D40, 0x20FC45C7, 
+  0x8B000000, 0x8D500C77, 0x7589F445, 0x478B50F4, 0xC7FF6A14, 0x0020F845, 
+  0x45C70000, 0x00000008, 0x8DD0FF00, 0xFF50FC45, 0x478DFC75, 0x478B5028, 
+  0xFF6A5618, 0xF08BD0FF, 0x5008458D, 0x8D0875FF, 0x8D50F845, 0x8B50F445, 
+  0xFF6A1447, 0xF685D0FF, 0x75FF6E78, 0x0C478B14, 0xFF1075FF, 0x37FF0C75, 
   0xF08BD0FF, 0x001445C7, 0x8D000000, 0x47895847, 0x14458D4C, 0x48478D50,
-  0x0C478B50, 0x006A006A, 0x4D8BD0FF, 0x74C98514, 0x60878D33, 0xC7000002,
-  0x00001045, 0x47890000, 0x10458D54, 0x8D006A50, 0x8B505047, 0xFF511047,
-  0x104D8BD0, 0x0C74C985, 0x02A0878D, 0xFF500000, 0x04C483D1, 0x8B2477FF,
-  0xD0FF1C47, 0x8B2477FF, 0xD0FF2047, 0x0179F685, 0xC68B5FCC, 0x5DE58B5E,
+  0x0C478B50, 0x006A006A, 0x4D8BD0FF, 0x74C98514, 0x60878D33, 0xC7000002, 
+  0x00001045, 0x47890000, 0x10458D54, 0x8D006A50, 0x8B505047, 0xFF511047, 
+  0x104D8BD0, 0x0C74C985, 0x02A0878D, 0xFF500000, 0x04C483D1, 0x0179F685, 
+  0x2477FFCC, 0xFF1C478B, 0x2477FFD0, 0xFF20478B, 0xC68B5FD0, 0x5DE58B5E, 
   0xCC0010C2
 };
 
 // shellcode of LdrLoadDllImpl
 static const ULONG64 LdrLoadDllShell64[] {
-  0x49105B8949DC8B4C, 0x4856415756186B89, 0x4918598B4860EC83, 0xC749F98B4808438D,
-  0x8B4900000020B843, 0xE88B49C85B8949F1, 0x00000020C043C749, 0x000843C741F28B4C,
-  0x000040B941000000, 0x438D4DA843894900, 0x538D49FFC98348C0, 0x244C8B4C2857FFC8,
-  0x8D4C3024448D4830, 0x4820244489485047, 0x57FFFFC98348D38B, 0x000080248C8B4430,
-  0xD88B3824448D4C00, 0x848D484024548D48, 0xC983480000008024, 0x57FF2024448948FF,
-  0x0F8B487B78DB8528, 0x8B49C58B4CCE8B4C, 0x70478D4C1857FFD6, 0x000000482444C748,
-  0x48244C8D4CD88B00, 0x3300000090878D48, 0xFF78478948C933D2, 0x4848244C8B481857,
-  0x98878D483C74C985, 0x502444C748000002, 0x80978D4800000000, 0x0088878948000000,
-  0x4550244C8D4C0000, 0x448B482057FFC033, 0x480974C085485024, 0xD0FF000002D88F8D,
-  0x483857FF484F8B48, 0xDB854057FF484F8B, 0x60245C8D4CCC0179, 0x8B49285B8B49C38B,
+  0x49105B8949DC8B4C, 0x4856415756186B89, 0x4918598B4860EC83, 0xC749F98B4808438D, 
+  0x8B4900000020B843, 0xE88B49C85B8949F1, 0x00000020C043C749, 0x000843C741F28B4C, 
+  0x000040B941000000, 0x438D4DA843894900, 0x538D49FFC98348C0, 0x244C8B4C2857FFC8, 
+  0x8D4C3024448D4830, 0x4820244489485047, 0x57FFFFC98348D38B, 0x000080248C8B4430, 
+  0xD88B3824448D4C00, 0x848D484024548D48, 0xC983480000008024, 0x57FF2024448948FF, 
+  0x0F8B487F78DB8528, 0x8B49C58B4CCE8B4C, 0x70478D4C1857FFD6, 0x000000482444C748, 
+  0x48244C8D4CD88B00, 0x3300000090878D48, 0xFF78478948C933D2, 0x4848244C8B481857, 
+  0x98878D483C74C985, 0x502444C748000002, 0x80978D4800000000, 0x0088878948000000, 
+  0x4550244C8D4C0000, 0x448B482057FFC033, 0x480974C085485024, 0xD0FF000002D88F8D, 
+  0x4F8B48CC0179DB85, 0x484F8B483857FF48, 0x60245C8D4C4057FF, 0x8B49285B8B49C38B, 
   0x5F5E41E38B49306B, 0xCCCCCCCCCCCCC35E
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 
 template <class Ptr>
-struct alignas(sizeof(Ptr)) ShellParamT {
+struct alignas(sizeof(Ptr)) ShellParamT 
+    : nt::internal::AS_POINTER_T<ShellParamT<ULONG32>> {
   // same with ShellParam, don not change order of members.
   Ptr DllPath; // LdrLoadDll first param
   Ptr ShellAddr;  // ecx + 4] (x86), ecx + 8](x64)
@@ -146,7 +147,7 @@ struct alignas(sizeof(Ptr)) ShellParamT {
   Ptr NtClose;
 
   // Dulipcate handle
-  Ptr SyncEvent;
+  Ptr SignEvent;
 
   // Restore
   BYTE OrignalCode[32];
@@ -160,8 +161,8 @@ struct alignas(sizeof(Ptr)) ShellParamT {
   WCHAR ConfigFile[MAX_PATH];
 };
 
-Process::InjectError InjectLibray32(const Process* process, 
-                                    const ShellParamT<ULONG32>* param) {
+Process::InjectError InjectLibrary32(const Process* process,
+                                     const ShellParamT<ULONG32>* param) {
   constexpr size_t hook_size = sizeof(param->OrignalCode);
   if (!process->ReadMem64(param->LdrLoadDll,
                           const_cast<BYTE*>(param->OrignalCode), hook_size)) {
@@ -214,8 +215,8 @@ Process::InjectError InjectLibray32(const Process* process,
   return Process::kInjectOk;
 }
 
-Process::InjectError InjectLibray64(const Process* process, 
-                                    const ShellParamT<ULONG64>* param) {
+Process::InjectError InjectLibrary64(const Process* process,
+                                     const ShellParamT<ULONG64>* param) {
   constexpr size_t hook_size = sizeof(param->OrignalCode);
   if (!process->ReadMem64(param->LdrLoadDll,
                           const_cast<BYTE*>(param->OrignalCode), hook_size)) {
@@ -270,8 +271,8 @@ Process::InjectError InjectLibray64(const Process* process,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-rtninja::Process::InjectError Process::InjectLibraryAfterCreateProcess(
-    HANDLE sync_event,
+rtninja::Process::InjectError Process::InjectLibraryByHookingLdrLoadDll(
+    HANDLE sign_event,
     const WStringPiece& dll32,
     const WStringPiece& dll64,
     const StringPiece& proc,
@@ -329,10 +330,10 @@ rtninja::Process::InjectError Process::InjectLibraryAfterCreateProcess(
     return kInjectQueryModuleProc;
 
   // Clones sync_event to injected process to set event.
-  HANDLE targt_sync_event = nullptr;
-  if (sync_event) {
+  HANDLE targt_sign_event = nullptr;
+  if (sign_event) {
     ::DuplicateHandle(
-        INVALID_HANDLE_VALUE, sync_event, process_, &targt_sync_event,
+        INVALID_HANDLE_VALUE, sign_event, process_, &targt_sign_event,
         DUPLICATE_SAME_ACCESS, FALSE, 0);
   }
 
@@ -341,25 +342,64 @@ rtninja::Process::InjectError Process::InjectLibraryAfterCreateProcess(
   if (allocate_mem.get() == nullptr)
     return kInjectAllocShell;
 
+
+  ShellParamT<ULONG64> shell_param;
+
   WORD buffer_size = 0;
   if (architecture() == kArchX86) {
-    ShellParamT<ULONG32> shell_param;
+    ShellParamT<ULONG32>* shell_param32 = shell_param.AsPtr32();
+    ZeroMemory(shell_param32, sizeof(*shell_param32));
+
+    shell_param32->LdrLoadDll = HandleToUlong32(proc_entry[0].address);
+    shell_param32->GetProc = HandleToUlong32(proc_entry[1].address);
+    shell_param32->WriteMem = HandleToUlong32(proc_entry[2].address);
+    shell_param32->NtSetEvent = HandleToUlong32(proc_entry[3].address);
+    shell_param32->NtClose = HandleToUlong32(proc_entry[4].address);
+    shell_param32->ProtectMem = HandleToUlong32(proc_entry[6].address);
+    shell_param32->SignEvent = HandleToUlong32(targt_sign_event);
+
+    shell_param32->ShellAddr = HandleToUlong32(allocate_mem.get());
+    shell_param32->ShellAddrSize = allocate_size;
+
+    // Fills injected dll file path.
+    wcsncpy_s(shell_param32->InjectDllBuf, dll32.data(), dll32.size());
+    buffer_size = static_cast<WORD>(dll32.size() * sizeof(wchar_t));
+    shell_param32->InjectDll.Length = buffer_size;
+    shell_param32->InjectDll.MaximumLength = buffer_size + sizeof(wchar_t);
+
+    // Fills main entry
+    strncpy_s(shell_param32->ProcedureBuf, proc.data(), proc.size());
+    buffer_size = static_cast<WORD>(proc.size() * sizeof(char));
+    shell_param32->Procedure.Length = buffer_size;
+    shell_param32->Procedure.MaximumLength = buffer_size + sizeof(char);
+
+    // Fills config
+    wcsncpy_s(shell_param32->ConfigFile, proc_param.data(), proc_param.size());
+
+    InjectError code = InjectLibrary32(this, shell_param32);
+    if (code == kInjectOk) {
+      // Shellcode may be not run. so let the shellcode release it.
+      allocate_mem.release();
+    }
+    return code;
+  } 
+  
+  else if(architecture() == kArchX64) { 
     ZeroMemory(&shell_param, sizeof(shell_param));
+    shell_param.LdrLoadDll = proc_entry[0].address;
+    shell_param.GetProc = proc_entry[1].address;
+    shell_param.WriteMem = proc_entry[2].address;
+    shell_param.NtSetEvent = proc_entry[3].address;
+    shell_param.NtClose = proc_entry[4].address;
+    shell_param.ProtectMem = proc_entry[6].address;
+    shell_param.SignEvent = HandleToUlong64(targt_sign_event);
 
-    shell_param.LdrLoadDll = static_cast<ULONG32>(proc_entry[0].address);
-    shell_param.GetProc = static_cast<ULONG32>(proc_entry[1].address);
-    shell_param.WriteMem = static_cast<ULONG32>(proc_entry[2].address);
-    shell_param.NtSetEvent = static_cast<ULONG32>(proc_entry[3].address);
-    shell_param.NtClose = static_cast<ULONG32>(proc_entry[4].address);
-    shell_param.ProtectMem = static_cast<ULONG32>(proc_entry[6].address);
-    shell_param.SyncEvent = HandleToUlong32(targt_sync_event);
-
-    shell_param.ShellAddr = HandleToUlong32(allocate_mem.get());
+    shell_param.ShellAddr = HandleToUlong64(allocate_mem.get());
     shell_param.ShellAddrSize = allocate_size;
 
     // Fills injected dll file path.
-    wcsncpy_s(shell_param.InjectDllBuf, dll32.data(), dll32.size());
-    buffer_size = static_cast<WORD>(dll32.size() * sizeof(wchar_t));
+    wcsncpy_s(shell_param.InjectDllBuf, dll64.data(), dll64.size());
+    buffer_size = static_cast<WORD>(dll64.size() * sizeof(wchar_t));
     shell_param.InjectDll.Length = buffer_size;
     shell_param.InjectDll.MaximumLength = buffer_size + sizeof(wchar_t);
 
@@ -372,7 +412,7 @@ rtninja::Process::InjectError Process::InjectLibraryAfterCreateProcess(
     // Fills config
     wcsncpy_s(shell_param.ConfigFile, proc_param.data(), proc_param.size());
 
-    InjectError code = InjectLibray32(this, &shell_param);
+    InjectError code = InjectLibrary64(this, &shell_param);
     if (code == kInjectOk) {
       // Shellcode may be not run. so let the shellcode release it.
       allocate_mem.release();
@@ -380,41 +420,7 @@ rtninja::Process::InjectError Process::InjectLibraryAfterCreateProcess(
     return code;
   }
 
-  ShellParamT<ULONG64> shell_param;
-  ZeroMemory(&shell_param, sizeof(shell_param));
-
-  shell_param.LdrLoadDll = static_cast<ULONG64>(proc_entry[0].address);
-  shell_param.GetProc = static_cast<ULONG64>(proc_entry[1].address);
-  shell_param.WriteMem = static_cast<ULONG64>(proc_entry[2].address);
-  shell_param.NtSetEvent = static_cast<ULONG64>(proc_entry[3].address);
-  shell_param.NtClose = static_cast<ULONG64>(proc_entry[4].address);
-  shell_param.ProtectMem = static_cast<ULONG64>(proc_entry[6].address);
-  shell_param.SyncEvent = HandleToUlong64(targt_sync_event);
-
-  shell_param.ShellAddr = HandleToUlong64(allocate_mem.get());
-  shell_param.ShellAddrSize = allocate_size;
-
-  // Fills injected dll file path.
-  wcsncpy_s(shell_param.InjectDllBuf, dll64.data(), dll64.size());
-  buffer_size = static_cast<WORD>(dll64.size() * sizeof(wchar_t));
-  shell_param.InjectDll.Length = buffer_size;
-  shell_param.InjectDll.MaximumLength = buffer_size + sizeof(wchar_t);
-
-  // Fills main entry
-  strncpy_s(shell_param.ProcedureBuf, proc.data(), proc.size());
-  buffer_size = static_cast<WORD>(proc.size() * sizeof(char));
-  shell_param.Procedure.Length = buffer_size;
-  shell_param.Procedure.MaximumLength = buffer_size + sizeof(char);
-
-  // Fills config
-  wcsncpy_s(shell_param.ConfigFile, proc_param.data(), proc_param.size());
-
-  InjectError code = InjectLibray64(this, &shell_param);
-  if (code == kInjectOk) {
-    // Shellcode may be not run. so let the shellcode release it.
-    allocate_mem.release();
-  }
-  return code;
+  return kInjectInvalidProcess;
 }
 
 }  // namespace rtninja

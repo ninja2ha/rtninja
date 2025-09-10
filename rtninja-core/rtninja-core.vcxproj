@@ -40,6 +40,7 @@
     <ClCompile Include="internal\pe_image.cc" />
     <ClCompile Include="process.cc" />
     <ClCompile Include="process_inject.cc" />
+    <ClCompile Include="process_inject2.cc" />
     <ClCompile Include="process_module.cc" />
     <ClCompile Include="string_piece.cc" />
   </ItemGroup>

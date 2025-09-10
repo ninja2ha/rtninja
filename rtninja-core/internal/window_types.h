@@ -24,7 +24,9 @@
 #undef max
 #endif
 
+// Making sure that |handle| is a 32bit addrsss before using this!!!
 #define HandleToUlong32(handle) ((ULONG32)((ULONG_PTR)(handle)))
+
 #define HandleToUlong64(handle) ((ULONG64)((ULONG_PTR)(handle)))
 #define Ulong64ToHandle(value) ((LPVOID)((ULONG_PTR)(value)))
 

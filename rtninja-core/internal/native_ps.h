@@ -316,6 +316,27 @@ using PEB = PEB_T<ULONG_PTR>;
 using PEB32 = PEB_T<ULONG32>;
 using PEB64 = PEB_T<ULONG64>;
 
+template <class Ptr>
+struct alignas(sizeof(Ptr)) PS_ATTRIBUTE_T : 
+    public internal::AS_POINTER_T<PS_ATTRIBUTE_T<ULONG32>> {
+  Ptr Attribute;
+  Ptr Size;
+  Ptr Value;
+  Ptr ReturnLength; // Ptr.
+};
+using PS_ATTRIBUTE = PS_ATTRIBUTE_T<ULONG_PTR>;
+using PS_ATTRIBUTE32 = PS_ATTRIBUTE_T<ULONG32>;
+using PS_ATTRIBUTE64 = PS_ATTRIBUTE_T<ULONG64>;
+
+template <class Ptr>
+struct PS_ATTRIBUTE_LIST_T {
+  SIZE_T TotalLength;
+  PS_ATTRIBUTE_T<Ptr> Attributes[1];
+};
+using PS_ATTRIBUTE_LIST = PS_ATTRIBUTE_LIST_T<ULONG_PTR>;
+using PS_ATTRIBUTE_LIST32 = PS_ATTRIBUTE_LIST_T<ULONG32>;
+using PS_ATTRIBUTE_LIST64 = PS_ATTRIBUTE_LIST_T<ULONG64>;
+
 enum MEMORY_INFORMATION_CLASS {
   MemoryBasicInformation, // q: MEMORY_BASIC_INFORMATION
   MemoryWorkingSetInformation, // q: MEMORY_WORKING_SET_INFORMATION
@@ -423,6 +444,19 @@ using NtFreeVirtualMemoryFunc = NTSTATUS(NTAPI*)(
     _In_ ULONG FreeType
    );
 
+using RtlCreateUserThreadFunc = NTSTATUS(NTAPI*)(
+    _In_ HANDLE ProcessHandle,
+    _In_opt_ PSECURITY_DESCRIPTOR ThreadSecurityDescriptor,
+    _In_ BOOLEAN CreateSuspended,
+    _In_opt_ ULONG ZeroBits,
+    _In_opt_ SIZE_T MaximumStackSize,
+    _In_opt_ SIZE_T CommittedStackSize,
+    _In_ LPTHREAD_START_ROUTINE StartAddress,
+    _In_opt_ PVOID Parameter,
+    _Out_opt_ PHANDLE ThreadHandle,
+    _Out_opt_ CLIENT_ID* ClientId
+    );
+
 // implements 
 
 // leaked handle(on win32)
@@ -503,6 +537,24 @@ BOOL FreeProcessMemory(
     _In_ PVOID BaseAddress,
     _In_ SIZE_T RegionSize,
     _In_ ULONG FreeType
+    );
+
+HANDLE CreateThread(
+    _In_     HANDLE hProcess,
+    _In_     SIZE_T dwStackSize,
+    _In_     ULONG_PTR lpStartAddress,
+    _In_opt_ ULONG_PTR lpParameter,
+    _In_     DWORD dwCreationFlags,
+    _In_opt_ LPDWORD lpThreadId
+    );
+
+HANDLE CreateThread64(
+    _In_     HANDLE hProcess,
+    _In_     SIZE_T dwStackSize,
+    _In_     ULONGLONG lpStartAddress,
+    _In_opt_ ULONGLONG lpParameter,
+    _In_     DWORD dwCreationFlags,
+    _In_opt_ LPDWORD lpThreadId
     );
 
 }   // namespace nt
