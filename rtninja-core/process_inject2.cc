@@ -77,7 +77,6 @@ static const ULONG64 ThreadProcShell64[] = {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
 template <class Ptr>
 struct alignas(sizeof(Ptr)) ShellParamT 
     : nt::internal::AS_POINTER_T<ShellParamT<ULONG32>> {
@@ -143,6 +142,8 @@ Process::InjectError InjectLibraryT(const Process* process,
 }
 
 }  // namespace
+
+////////////////////////////////////////////////////////////////////////////////
 
 Process::InjectError Process::InjectLibraryByThreading(
     HANDLE sign_event,

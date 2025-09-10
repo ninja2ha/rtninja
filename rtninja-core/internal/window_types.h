@@ -24,10 +24,12 @@
 #undef max
 #endif
 
-// Making sure that |handle| is a 32bit addrsss before using this!!!
+// x64: Making sure that |handle| is a 32bit addrsss!!!
 #define HandleToUlong32(handle) ((ULONG32)((ULONG_PTR)(handle)))
 
 #define HandleToUlong64(handle) ((ULONG64)((ULONG_PTR)(handle)))
+
+// x86: Making sure that |value| is a 32bit addrsss!!!
 #define Ulong64ToHandle(value) ((LPVOID)((ULONG_PTR)(value)))
 
 #endif  // RTNINJA_RTNINJA_CORE_INTERNAL_WINDOW_TYPES_H_

@@ -342,7 +342,6 @@ rtninja::Process::InjectError Process::InjectLibraryByHookingLdrLoadDll(
   if (allocate_mem.get() == nullptr)
     return kInjectAllocShell;
 
-
   ShellParamT<ULONG64> shell_param;
 
   WORD buffer_size = 0;

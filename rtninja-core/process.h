@@ -94,7 +94,7 @@ class Process {
                      bool search_x64_first,
                      ModuleEntry* info) const;
 
-  // Enumerates modules by querying virtual memoryt information. 
+  // Enumerates modules by querying virtual memory information. 
   // Returns false on user aborted.
   // NOTE: Calling ::GetLastError() to get more details.
   // REQUIRED ACCESS: 

@@ -192,7 +192,6 @@ bool Process::EnumerateModules(bool(*callback)(ModuleEntry*, void*),
   if (!continue_enum)
     return false;
 
-
   int count32 = 0;
   if (peb_address32 != 0ul &&
       nt::ReadProcessMemory64(
