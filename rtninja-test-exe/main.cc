@@ -9,6 +9,7 @@
 
 #include "rtninja-core/internal/window_types.h"
 #include "rtninja-core/process.h"
+#include "rtninja-core/error_util.h"
 
 namespace {
 
@@ -56,15 +57,22 @@ int testCreateProcessAndInjectDll(const std::wstring& exe,
     return 0;
   }
 
+  ResumeThread(pi.hThread);
+
+  Sleep(1000);
+
   HANDLE sync_event = ::CreateEvent(NULL, TRUE, FALSE, NULL);
 
   rtninja::Process proc(pi.hProcess);
-  auto code = proc.InjectLibraryAfterCreateProcess(
+  auto code = proc.InjectLibraryByThreading(
       sync_event, dll32, dll64, "RtNinjaMain");
-  if (rtninja::Process::kInjectOk != code) 
-    std::wcout << "[WARN]: Injects failed." << "code=" << code;
-
-  ResumeThread(pi.hThread);
+  if (rtninja::Process::kInjectOk != code) { 
+    DWORD sys_err = ::GetLastError();
+    std::wcout << "[WARN]: Injects failed."
+               << "injectcode=" << code << ", "
+               << "os=" << rtninja::FormatSysErrorToMessage(sys_err) << std::endl;
+    
+  }
 
   if (rtninja::Process::kInjectOk == code) {
     DWORD wait_code = ::WaitForSingleObject(sync_event, 5000);
