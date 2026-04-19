@@ -86,7 +86,8 @@ using NtClearEventFunc = NTSTATUS(NTAPI*)(
     );
     
 using NtSetEventFunc = NTSTATUS(NTAPI*)(
-    _In_ _Post_ptr_invalid_ HANDLE EventHandle
+    _In_ _Post_ptr_invalid_ HANDLE EventHandle,
+                            PLONG v
     );
 
 using LdrLoadDllFunc = NTSTATUS (NTAPI*)(
